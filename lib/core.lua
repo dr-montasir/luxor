@@ -4,11 +4,11 @@ local luxor = {}
 -- Configuration
 luxor.config = {
     host = "localhost", -- Default host
-    port = 8081,        -- Default port
-    document_root = nil -- Optional document root for static files
+    port = 8080,        -- Default port
+    static_root = nil -- Optional static root for static files
 }
 
--- Functions to set the host, port, and document root
+-- Functions to set the host, port, and static root
 function luxor.set_host(host)
     luxor.config.host = host
 end
@@ -17,9 +17,31 @@ function luxor.set_port(port)
     luxor.config.port = port
 end
 
-function luxor.set_document_root(path)
-    luxor.config.document_root = path
+function luxor.set_static_root(path)
+    luxor.config.static_root = path
 end
+
+----------Future enhancements----------
+----------------set root---------------
+---------------------------------------
+
+-- Future enhancements for flexibility:
+
+-- I plan to add other root directories 
+-- (such as uploads, private, etc.)
+-- with similar setter functions:
+
+-- function luxor.set_upload_root(path)
+--     luxor.config.upload_root = path
+-- end
+
+-- function luxor.set_private_root(path)
+--     luxor.config.private_root = path
+-- end
+
+---------/Future enhancements/---------
+---------------/set root/--------------
+---------------------------------------
 
 -- Routes (URL patterns to handler functions)
 luxor.routes = {}
@@ -193,10 +215,10 @@ end
 -- Function to serve static files from disk
 -- This is more memory efficient than loading all into memory at startup
 local function serve_static_file(socket, requested_path)
-    local file_path = luxor.config.document_root
+    local file_path = luxor.config.static_root
 
     if not file_path then
-        -- Document root not set, cannot serve static files
+        -- Static root not set, cannot serve static files
         send_response(socket, "500", "Internal Server Error", nil, "Static file serving not configured (document_root not set).")
         return
     end
@@ -356,15 +378,17 @@ local function handle_request(socket)
 
     -- Check if it's a GET request and potentially a static file
     -- We'll assume requests starting with /public/ are static files
-    elseif request.method == "GET" and luxor.config.document_root and (request.path == "/public/" or request.path:find("^/public/")) then
-        -- Extract the path relative to the document root
-        local relative_path = request.path:gsub("^/public/", "")
+    -- elseif request.method == "GET" and luxor.config.static_root and (request.path == "/public/" or request.path:find("^/public/")) then
+    elseif request.method == "GET" and luxor.config.static_root and (request.path == "/" or request.path:find("^/")) then
+        -- Extract the path relative to the static root
+        -- local relative_path = request.path:gsub("^/public/", "")
+        local relative_path = request.path:gsub("^/", "")
         if relative_path == "" then relative_path = "index.html" end -- Serve index.html for /public/
 
         serve_static_file(socket, relative_path)
 
     else
-        -- No route found and not a GET request for static file (or document_root not set)
+        -- No route found and not a GET request for static file (or static_root not set)
         send_response(socket, "404", "Not Found", nil, "<h1>404 Not Found</h1>")
     end
 end
@@ -392,8 +416,8 @@ function luxor.start()
 
 
     print("Server listening on " .. luxor.config.host .. ":" .. luxor.config.port)
-    -- if luxor.config.document_root then
-    --     print("Serving static files from: " .. luxor.config.document_root)
+    -- if luxor.config.static_root then
+    --     print("Serving static files from: " .. luxor.config.static_root)
     -- end
     print("Press Ctrl+C to stop.")
 

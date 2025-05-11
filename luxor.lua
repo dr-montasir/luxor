@@ -9,7 +9,7 @@
 -- To verify that LuaSocket is installed correctly, open Lua and run:
 --    local luxor = require("luxor")
 --    print(luxor._INFO)
--- If you see output like "Luxor: A Simple Lua Web Framework\nV0.0.1-1", the installation was successful.
+-- If you see output like "Luxor: A Simple Lua Web Framework\nV0.1.0-1", the installation was successful.
 
 local luxor = require("lib.core") -- Load the core Luxor module
 
@@ -17,7 +17,7 @@ local luxor = require("lib.core") -- Load the core Luxor module
 -- LUXOR INFO FUNCTIONS
 ---------------------------------
 
-local version = "0.0.1-1"
+local version = "0.1.0-1"
 
 luxor._INFO = "Luxor: A Simple Lua Web Framework\nV" .. version
 

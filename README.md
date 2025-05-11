@@ -33,7 +33,7 @@ local luxor = require("luxor")
 -- To verify that LuaSocket is installed correctly, open Lua and run:
 --    local luxor = require("luxor")
 --    print(luxor._INFO)
--- If you see output like "Luxor: A Simple Lua Web Framework\nV0.0.1-1", the installation was successful.
+-- If you see output like "Luxor: A Simple Lua Web Framework\nV0.1.0-1", the installation was successful.
 
 print(luxor._INFO)
 
@@ -41,12 +41,13 @@ print(luxor._INFO)
 luxor.set_host("0.0.0.0") -- Listen on all available interfaces
 luxor.set_port(8080)       -- Set the port to 8080
 
--- Set the document root for static files.
+-- Set the static root for static files.
 -- The framework will serve files from this directory when requests
--- start with "/public/".
--- luxor.set_document_root("public")
--- luxor.set_document_root("public/assets")
-luxor.set_document_root("src/assets")
+-- start with "/" or "" or "./".
+-- luxor.set_static_root("public")
+-- luxor.set_static_root("public/assets")
+-- luxor.set_static_root("assets")
+luxor.set_static_root("src/assets")
 
 -- Add a route for the root path ("/")
 -- The handler function receives the request object and should return
@@ -75,17 +76,19 @@ luxor.add_route("GET", "/", function(request)
 <html>
     <head>
         <title>My Dynamic Website</title>
-        <link rel="stylesheet" href="/public/style.css">
+        <link rel="stylesheet" href="/style.css">
     </head>
     <body>
         <h1>Hello from a dynamic index page! 👋</h1>
         <p>Request Method: ]] .. request.method .. [[</p>
         <p>Request Path: ]] .. request.path .. [[</p>
         <p><b>Sin(30 deg) = ]] .. sin30deg .. [[</b></p>
-        <img src="/public/logo.svg" alt="Logo">
+        <img src="/logo.svg" alt="/Logo">
+        <img src="logo.svg" alt="Logo">
+        <img src="./logo.svg" alt="./Logo">
         <br>
-        <img src="/public/original.jpg" width="25%" alt="jpg image">
-        <script src="/public/script.js"></script>
+        <img src="/original.jpg" width="25%" alt="jpg image">
+        <script src="/script.js"></script>
     </body>
 </html>]]
 
@@ -189,7 +192,6 @@ console.log("Hello from script.js!");
   <path class="curve" d="M 55,20 Q 45,10 55,20 T 40,30" />
 </svg>
 ```
-
 
 ---
 
