@@ -19,6 +19,6 @@ build = {
    modules = {
     luxor = 'luxor.lua',
     ["lib.core"] = 'lib/core.lua',
-    ["lib.client"] 'lib/client.lua'
+    ["lib.client"] = 'lib/client.lua'
    }
 }
