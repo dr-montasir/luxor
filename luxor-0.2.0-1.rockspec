@@ -1,5 +1,5 @@
 package = "luxor"
-version = "0.1.0-1"
+version = "0.2.0-1"
 source = {
    url = "git+https://github.com/dr-montasir/luxor.git"
 }
@@ -18,6 +18,7 @@ build = {
    type = "builtin",
    modules = {
     luxor = 'luxor.lua',
-    ["lib.core"] = 'lib/core.lua'
+    ["lib.core"] = 'lib/core.lua',
+    ["lib.client"] 'lib/client.lua'
    }
 }

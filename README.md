@@ -33,7 +33,7 @@ local luxor = require("luxor")
 -- To verify that LuaSocket is installed correctly, open Lua and run:
 --    local luxor = require("luxor")
 --    print(luxor._INFO)
--- If you see output like "Luxor: A Simple Lua Web Framework\nV0.1.0-1", the installation was successful.
+-- If you see output like "Luxor: A Simple Lua Web Framework\nV0.0.2-1", the installation was successful.
 
 print(luxor._INFO)
 
@@ -103,11 +103,31 @@ luxor.add_route("GET", "/api/hello", function(request)
 end)
 
 local submit_handler = function(request)
-    print("Received POST body:", request.body)
-    return "200", "OK", {["Content-Type"] = "text/plain"}, "Data received!"
+    local json_response = request.body
+
+    print("Received " .. request.method .. " body: " .. request.body)
+
+    return "200", "OK", {["Content-Type"] = "application/json"}, json_response
 end
 
 luxor.add_route("POST", "/submit", submit_handler)
+
+-- The Luxor framework provides an internal `http_client` method accessible via `luxor.http_client`.
+-- This function allows you to perform internal HTTP requests to your own application endpoints,
+-- similar to how tools like Postman work, but embedded within your Lua project.
+--
+-- Usage within your app:
+-- To test endpoints without using external tools,
+-- you can add the http_client route to your project with the following code:
+--   luxor.add_route("GET", "/http-client", luxor.http_client)
+-- and handle the response accordingly.
+--
+-- Note:
+-- This is particularly useful during development and testing phases,
+-- as it allows you to simulate client requests programmatically within your Lua code.
+
+-- Route to test the internal http_client
+luxor.add_route("GET", "/http-client", luxor.http_client)
 
 -- You can add more routes here for other paths and methods:
 
