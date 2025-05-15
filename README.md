@@ -33,7 +33,7 @@ local luxor = require("luxor")
 -- To verify that LuaSocket is installed correctly, open Lua and run:
 --    local luxor = require("luxor")
 --    print(luxor._INFO)
--- If you see output like "Luxor: A Simple Lua Web Framework\nV0.0.2-1", the installation was successful.
+-- If you see output like "Luxor: A Simple Lua Web Framework\nV0.0.3-1", the installation was successful.
 
 print(luxor._INFO)
 
@@ -111,6 +111,16 @@ local submit_handler = function(request)
 end
 
 luxor.add_route("POST", "/submit", submit_handler)
+
+-- Example handler with :id param
+local function item_id_handler(request, params)
+    local id = params.id or "unknown"
+    local response_body = "<h1>Item ID: " .. id .. "</h1>"
+    return "200", "OK", {["Content-Type"] = "text/html"}, response_body
+end
+
+-- Register route with parameter :id
+luxor.add_route("GET", "/item/:id", item_id_handler)
 
 -- The Luxor framework provides an internal `http_client` method accessible via `luxor.http_client`.
 -- This function allows you to perform internal HTTP requests to your own application endpoints,

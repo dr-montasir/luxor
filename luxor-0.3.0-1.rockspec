@@ -1,5 +1,5 @@
 package = "luxor"
-version = "0.2.0-1"
+version = "0.3.0-1"
 source = {
    url = "git+https://github.com/dr-montasir/luxor.git"
 }
@@ -11,8 +11,8 @@ description = {
    maintainer = "Montasir Mirghani"
 }
 dependencies = {
-   "lua >= 5.1, < 5.5",
-   "luasocket >= 3.0"
+   "lua >= 5.1,
+   "luasocket >= 2.0"
 }
 build = {
    type = "builtin",

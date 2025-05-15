@@ -1,4 +1,4 @@
--- Framework Name (luxor) Request:
+-- Luxor framework
 local luxor = {}
 
 -- Configuration
@@ -8,7 +8,7 @@ luxor.config = {
     static_root = nil -- Optional static root for static files
 }
 
--- Functions to set the host, port, and static root
+-- Functions to set the host, port, static root
 function luxor.set_host(host)
     luxor.config.host = host
 end
@@ -46,7 +46,7 @@ end
 -- Routes (URL patterns to handler functions)
 luxor.routes = {}
 
--- Helper function to split a string (could be more robust, but okay for now)
+-- Helper function to split a string
 local function split(inputstr, sep)
     if sep == nil then
         sep = "%s"
@@ -58,15 +58,58 @@ local function split(inputstr, sep)
     return t
 end
 
+-- Function to add route with pattern support
+function luxor.add_route(method, pattern, handler)
+    method = string.upper(method)
+    -- Initialize route list for method if needed
+    luxor.routes[method] = luxor.routes[method] or {}
+    -- Store pattern and handler
+    table.insert(luxor.routes[method], {pattern=pattern, handler=handler})
+end
+
+-- Function to match route pattern with path and extract parameters
+local function match_route(pattern, path)
+    local params = {}
+    -- Convert pattern with :param to Lua pattern
+    local lua_pattern = "^" .. pattern:gsub("(:%w+)", "([^/]+)") .. "$"
+    local matches = {path:match(lua_pattern)}
+    if #matches > 0 then
+        -- Extract parameter names
+        local param_names = {}
+        for param in pattern:gmatch(":(%w+)") do
+            table.insert(param_names, param)
+        end
+        -- Map parameter names to matched values
+        for i, name in ipairs(param_names) do
+            params[name] = matches[i]
+        end
+        return true, params
+    else
+        return false, nil
+    end
+end
+
+-- Function to find matching route and extract params
+local function find_route(method, path)
+    if not luxor.routes[method] then return nil, nil end
+    for _, route in ipairs(luxor.routes[method]) do
+        local matched, params = match_route(route.pattern, path)
+        if matched then
+            return route.handler, params
+        end
+    end
+    return nil, nil
+end
+
 -- Basic function to send a response
 local function send_response(socket, status_code, status_text, headers, body)
-    -- Ensure status_code and status_text are strings for concatenation
+     -- Ensure status_code and status_text are strings for concatenation
     local response = "HTTP/1.1 " .. tostring(status_code) .. " " .. tostring(status_text) .. "\r\n"
-
+    
     -- Default headers
     response = response .. "Content-Length: " .. (body and #body or 0) .. "\r\n"
-    response = response .. "Connection: close\r\n" -- Keep it simple for now
-
+    response = response .. "Connection: close\r\n"
+    
     -- Add custom headers
     if headers then
         for key, value in pairs(headers) do
@@ -74,8 +117,9 @@ local function send_response(socket, status_code, status_text, headers, body)
         end
     end
 
-    response = response .. "\r\n" -- End of headers
+    response = response .. "\r\n" --End of headers
 
+    
     -- Send headers
     -- Use pcall to catch errors during send, as socket might be closed
     local ok, err = pcall(socket.send, socket, response)
@@ -83,55 +127,52 @@ local function send_response(socket, status_code, status_text, headers, body)
         print("Error sending headers: " .. tostring(err))
         -- Attempt to close socket gracefully if pcall failed before it
         if socket and socket.close then
-           pcall(socket.close, socket) -- Use pcall again just in case
+            pcall(socket.close, socket) 
         end
         return
     end
-
 
     -- Send body if exists
     if body then
         local ok_body, err_body = pcall(socket.send, socket, body)
         if not ok_body then
-             print("Error sending body: " .. tostring(err_body))
-             -- Attempt to close socket gracefully
-             if socket and socket.close then
-                pcall(socket.close, socket)
-             end
-             return
+            print("Error sending body: " .. tostring(err_body))
+            -- Attempt to close socket gracefully
+            if socket and socket.close then 
+                pcall(socket.close, socket) 
+            end
+            return
         end
     end
 
     -- Close the socket after sending the response (simple model)
-    if socket and socket.close then
-        pcall(socket.close, socket) -- Use pcall just in case
+    if socket and socket.close then 
+        pcall(socket.close, socket) 
     end
 end
 
--- Function to parse the incoming HTTP request (More Robust)
+-- Function to parse the incoming HTTP request
 local function parse_request(socket)
-    local request_data = ""
-    local request_line = nil
-    local headers = {}
-    local body_content = nil
-    local content_length = 0
-
     -- Set a timeout for receiving data
     -- Note: In a coroutine environment with non-blocking sockets,
     -- receive will yield instead of timing out if no data is available.
     -- The timeout here is more for if the client is truly idle for too long.
     socket:settimeout(5) -- 5 second timeout for inactivity
+    local request_line
+    local headers = {}
+    local body_content
+    local content_length = 0
 
     -- Read line by line until we get the request line and headers
     while true do
         local line, err = socket:receive("*l") -- Read until newline
 
         if err == "timeout" then
-             print("Request receive timeout")
-             return nil, "timeout"
+            print("Request receive timeout")
+            return nil, "timeout"
         elseif err == "closed" then
-             print("Socket closed during receive")
-             return nil, "closed"
+            print("Socket closed during receive")
+            return nil, "closed"
         elseif err then
             print("Error receiving request line/headers: " .. tostring(err))
             return nil, err
@@ -144,7 +185,7 @@ local function parse_request(socket)
         if not request_line then
             request_line = line
         else
-            -- Parse header line
+             -- Parse header line
             local key, value = line:match("([^:]+):%s*(.+)")
             if key and value then
                 headers[key:lower()] = value -- Store headers in lowercase
@@ -153,9 +194,9 @@ local function parse_request(socket)
     end
 
     if not request_line then
-         -- Received end of headers without a request line (shouldn't happen with valid requests)
-         print("Received empty request or socket closed prematurely")
-         return nil, "empty_request"
+        -- Received end of headers without a request line (shouldn't happen with valid requests)
+        print("Received empty request or socket closed prematurely")
+        return nil, "empty_request"
     end
 
     -- Parse request line
@@ -170,14 +211,14 @@ local function parse_request(socket)
     if cl_header then
         content_length = tonumber(cl_header)
         if content_length and content_length > 0 then
-            -- Read the request body
+             -- Read the request body
             local body, err = socket:receive(content_length) -- Read exactly Content-Length bytes
-             if err == "timeout" then
-                 print("Request body receive timeout")
-                 return nil, "timeout"
+            if err == "timeout" then
+                print("Request body receive timeout")
+                return nil, "timeout"
             elseif err == "closed" then
-                 print("Socket closed during body receive")
-                 return nil, "closed"
+                print("Socket closed during body receive")
+                return nil, "closed"
             elseif err then
                 print("Error receiving request body: " .. tostring(err))
                 return nil, err
@@ -185,8 +226,8 @@ local function parse_request(socket)
             if body and #body == content_length then
                 body_content = body
             else
-                 print("Did not receive expected body length or socket closed")
-                 return nil, "incomplete_body"
+                print("Did not receive expected body length or socket closed")
+                return nil, "incomplete_body"
             end
         end
     end
@@ -202,14 +243,6 @@ local function parse_request(socket)
         body = body_content,
         -- Query parameters would be parsed from 'path' here if needed
     }, nil -- Return request object and no error
-end
-
-
--- Function to add a route
-function luxor.add_route(method, path, handler)
-    method = string.upper(method)
-    luxor.routes[method] = luxor.routes[method] or {}
-    luxor.routes[method][path] = handler
 end
 
 -- Function to serve static files from disk
@@ -293,7 +326,6 @@ local function serve_static_file(socket, requested_path)
         return
     end
 
-
     -- Send the file content in chunks (CORRECTED LOGIC)
     local chunk_size = 4096 -- Or adjust based on performance
     while true do
@@ -326,125 +358,86 @@ local function serve_static_file(socket, requested_path)
     end
 end
 
-
--- Adding the function to handle requests (CORRECTED LOGIC)
+-- The main request handler
 local function handle_request(socket)
     local request, parse_err = parse_request(socket)
-
+    
     if parse_err then
-        -- Send an appropriate error response based on the parse error
+         -- Send an appropriate error response based on the parse error
         if parse_err == "timeout" then
-             send_response(socket, "408", "Request Timeout", nil, "Request Timeout")
+            send_response(socket, "408", "Request Timeout", nil, "Request Timeout")
         elseif parse_err == "malformed_request_line" then
             send_response(socket, "400", "Bad Request", nil, "Malformed Request Line")
         elseif parse_err == "incomplete_body" then
-             send_response(socket, "400", "Bad Request", nil, "Incomplete Request Body")
+            send_response(socket, "400", "Bad Request", nil, "Incomplete Request Body")
         elseif parse_err == "closed" then
-             -- print("Client closed connection during request parsing.") -- Optional logging
-             -- No response can be sent if the socket is already closed
+            -- socket closed, no response
+            -- print("Client closed connection during request parsing.") -- Optional logging
         else -- Generic parsing error
             send_response(socket, "400", "Bad Request", nil, "Error Parsing Request")
         end
         -- parse_request already handles closing the socket on error, but let's be explicit
         -- Use pcall as socket might already be closed
-        if socket and socket.close then pcall(socket.close, socket) end
+        if socket and socket.close then 
+            pcall(socket.close, socket) 
+        end
         return
     end
 
-    -- Log the parsed request line
-    -- print(string.format("Request: %s %s %s", request.method, request.path, request.http_version))
+    -- Find route handler with pattern matching
+    local handler, route_params = find_route(request.method, request.path)
 
-    -- print("Headers:", request.headers) -- Uncomment to see parsed headers
-
-    -- if request.body then print("Body:", request.body) end -- Uncomment to see body
-
-    -- Check if the requested path is for a route handler
-    if luxor.routes[request.method] and luxor.routes[request.method][request.path] then
-        local handler = luxor.routes[request.method][request.path]
-
-        -- Call the handler function, passing the request object
-        -- Handlers should ideally return status_code, status_text, headers, body
-        -- pcall returns true/false on success/failure followed by the function's return values or error message
-        local ok, handler_status_code, handler_status_text, handler_headers, handler_body = pcall(handler, request)
-
-        if not ok then -- pcall returned false, meaning the handler function errored
-             -- The second return value (handler_status_code in this case) contains the error message
-             print("Error in route handler for " .. request.method .. " " .. request.path .. ": " .. tostring(handler_status_code))
-             send_response(socket, "500", "Internal Server Error", nil, "<h1>Internal Server Error</h1>Error in handler.")
-        else -- Handler executed successfully, ok is true. The subsequent variables hold the returned values.
-             -- Pass the returned values from the handler to send_response
-             send_response(socket, handler_status_code, handler_status_text, handler_headers, handler_body)
+    if handler then
+        -- Call handler with request and route_params
+        local ok, status_code, status_text, headers, body = pcall(handler, request, route_params)
+        if not ok then
+            print("Error in route handler: " .. tostring(status_code))
+            send_response(socket, "500", "Internal Server Error", nil, "<h1>Internal Server Error</h1>")
+        else
+            send_response(socket, status_code, status_text, headers, body)
         end
-
-    -- Check if it's a GET request and potentially a static file
-    -- We'll assume requests starting with /public/ are static files
-    -- elseif request.method == "GET" and luxor.config.static_root and (request.path == "/public/" or request.path:find("^/public/")) then
-    elseif request.method == "GET" and luxor.config.static_root and (request.path == "/" or request.path:find("^/")) then
-        -- Extract the path relative to the static root
-        -- local relative_path = request.path:gsub("^/public/", "")
+    elseif request.method == "GET" and luxor.config.static_root then
         local relative_path = request.path:gsub("^/", "")
-        if relative_path == "" then relative_path = "index.html" end -- Serve index.html for /public/
-
+        if relative_path == "" then relative_path = "index.html" end
         serve_static_file(socket, relative_path)
-
     else
-        -- No route found and not a GET request for static file (or static_root not set)
         send_response(socket, "404", "Not Found", nil, "<h1>404 Not Found</h1>")
     end
 end
 
--- Function to start the server
+-- Function to start server
 function luxor.start()
     local socket_lib = require("socket")
     local server = socket_lib.tcp()
-
-    -- Set socket options if needed (e.g., SO_REUSEADDR)
     server:setoption("reuseaddr", true)
-
     local bind_success, bind_err = server:bind(luxor.config.host, luxor.config.port)
     if not bind_success then
         print("Error binding to " .. luxor.config.host .. ":" .. luxor.config.port .. ": " .. tostring(bind_err))
-        return false -- Indicate failure
+        return false
     end
-
-    local listen_success, listen_err = server:listen(10) -- Increased backlog
+    local listen_success, listen_err = server:listen(10)
     if not listen_success then
         print("Error listening: " .. tostring(listen_err))
         server:close()
-        return false -- Indicate failure
+        return false
     end
-
-
     print("Server listening on " .. luxor.config.host .. ":" .. luxor.config.port)
-    -- if luxor.config.static_root then
-    --     print("Serving static files from: " .. luxor.config.static_root)
-    -- end
     print("Press Ctrl+C to stop.")
-
-    -- Use non-blocking sockets and coroutines for concurrent handling
-    server:settimeout(0) -- Make the server socket non-blocking
-
-    -- Simple coroutine scheduler (very basic)
+    -- Non-blocking server socket
+    server:settimeout(0)
+    local socket_lib = require("socket")
     local living_coroutines = {}
 
     local function spawn_handler(client_socket)
         local co = coroutine.create(function()
-            -- Use pcall around the handler call within the coroutine
-            -- handle_request itself has internal pcalls, but this outer one
-            -- catches errors that might prevent handle_request from even starting correctly.
             local ok, err = pcall(handle_request, client_socket)
             if not ok then
-                print("Unhandled error in handler coroutine (before/during handle_request start): " .. tostring(err))
-                 -- If an error occurred before send_response could close the socket
-                 if client_socket and client_socket.close then
-                     pcall(client_socket.close, client_socket) -- Attempt to close
-                 end
+                print("Unhandled error in handler coroutine: " .. tostring(err))
+                if client_socket and client_socket.close then pcall(client_socket.close, client_socket) end
             end
-
-            -- Remove self from the list when done (or errored)
-            -- We need to find the current coroutine
+            -- Remove self from list
             local current_co = coroutine.running()
-            for i = #living_coroutines, 1, -1 do -- Iterate backwards for safe removal
+            for i = #living_coroutines, 1, -1 do
                 if living_coroutines[i] == current_co then
                     table.remove(living_coroutines, i)
                     break
@@ -455,56 +448,36 @@ function luxor.start()
         return co
     end
 
-
     while true do
-        -- Accept new connections non-blocking
         local client_socket, err = server:accept()
-
         if client_socket then
-            -- New connection, spawn a coroutine to handle it
-            local handler_co = spawn_handler(client_socket)
-            local status, msg = coroutine.resume(handler_co)
-             if status == false then
-                -- Error during the *initial* resume (e.g., syntax error in handler function or setup)
-                print("Error during initial resume of handler coroutine: " .. tostring(msg))
-                -- The coroutine is dead, spawn_handler will remove it.
-                -- Close the socket immediately as no handler was successfully started.
+            local co = spawn_handler(client_socket)
+            local status, msg = coroutine.resume(co)
+            if not status then
+                print("Error during handler coroutine: " .. tostring(msg))
                 if client_socket and client_socket.close then pcall(client_socket.close, client_socket) end
-             end
-
+            end
         elseif err ~= "timeout" then
-            -- Real error accepting connection
             print("Error accepting connection: " .. tostring(err))
-            -- In a real server, you might want to pause or exit here
-            break -- Exit the loop on a real accept error
+            break
         end
 
-        -- Resume living coroutines (those that yielded, e.g., waiting for socket data)
-        -- This is a very simple poll loop. A real async loop would be more sophisticated.
-        -- Iterate backwards because table.remove is used by the coroutine itself
         for i = #living_coroutines, 1, -1 do
             local co = living_coroutines[i]
-            -- Check if the coroutine is suspended and not dead
             if coroutine.status(co) == "suspended" then
                 local status, msg = coroutine.resume(co)
-                 if status == false then
+                if not status then
                     print("Error resuming handler coroutine: " .. tostring(msg))
-                    -- Coroutine errored, it will be removed by spawn_handler in its cleanup
-                 end
-             elseif coroutine.status(co) == "dead" then
-                -- Coroutine already finished or errored and removed itself.
-                -- This check is mostly for safety; the coroutine itself should remove itself.
-                -- We could add extra cleanup here if needed, but the current logic is fine.
-            -- Coroutine is running or normal exit, nothing to do here.
+                end
             end
         end
 
         -- Prevent the loop from consuming 100% CPU in a tight loop with no connections
         -- Adjust the sleep time as needed. A more advanced loop would only wake when sockets are ready.
-        socket_lib.sleep(0.001) -- Sleep for 1 millisecond (can adjust)
+        socket_lib.sleep(0.001) -- Sleep for 1 millisecond
     end
 
-    -- Clean up server socket on exit
+     -- Clean up server socket on exit
     server:close()
     print("Server stopped.")
     -- Note: Living coroutines might still be running or suspended.
