@@ -1,4 +1,5 @@
--- Luxor a simple Lua Web Framework (Improved Socket and Parsing)
+-- Luxor
+-- A Lua Web Framework Designed for Simplicity and Ease of Use.
 
 -- Installation via LuaRocks
 -- Luxor can be easily installed using LuaRocks, the Lua package manager.
@@ -9,7 +10,8 @@
 -- To verify that LuaSocket is installed correctly, open Lua and run:
 --    local luxor = require("luxor")
 --    print(luxor._INFO)
--- If you see output like "Luxor: A Simple Lua Web Framework\nV0.3.0-1", the installation was successful.
+-- If you see output like "Luxor: A Lua Web Framework Designed for 
+-- Simplicity and Ease of Use.\nVersion: 0.4.0-1", the installation was successful.
 
 local luxor = require("lib.core") -- Load the core Luxor module
 
@@ -17,11 +19,11 @@ local luxor = require("lib.core") -- Load the core Luxor module
 -- LUXOR INFO FUNCTIONS
 ---------------------------------
 
-local version = "0.3.0-1"
+local version = "Version: 0.4.0-1"
 
-luxor._INFO = "Luxor: A Simple Lua Web Framework\nV" .. version
+local dependencies = "  lua >= 5.1\n  luasocket >= 2.0"
 
--- print(luxor._INFO)
+luxor._INFO = "Luxor: A Lua Web Framework Designed for Simplicity and Ease of Use\n" .. version .. "\nDependencies:\n" ..dependencies.. "\n" ..string.rep(".", 32)
 
 ---------------------------------
 -- END LUXOR INFO FUNCTIONS

@@ -1,11 +1,11 @@
 package = "luxor"
-version = "0.3.0-1"
+version = "0.4.0-1"
 source = {
    url = "git+https://github.com/dr-montasir/luxor.git"
 }
 description = {
-   summary = "Luxor",
-   detailed = "Luxor",
+   summary = "A Lua Web Framework Designed for Simplicity and Ease of Use",
+   detailed = "A Lua Web Framework Designed for Simplicity and Ease of Use",
    homepage = "https://github.com/dr-montasir/luxor",
    license = "MIT OR Apache-2.0",
    maintainer = "Montasir Mirghani"

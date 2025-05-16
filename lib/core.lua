@@ -69,24 +69,40 @@ end
 
 -- Function to match route pattern with path and extract parameters
 local function match_route(pattern, path)
-    local params = {}
-    -- Convert pattern with :param to Lua pattern
-    local lua_pattern = "^" .. pattern:gsub("(:%w+)", "([^/]+)") .. "$"
-    local matches = {path:match(lua_pattern)}
-    if #matches > 0 then
-        -- Extract parameter names
-        local param_names = {}
-        for param in pattern:gmatch(":(%w+)") do
-            table.insert(param_names, param)
-        end
-        -- Map parameter names to matched values
-        for i, name in ipairs(param_names) do
-            params[name] = matches[i]
-        end
-        return true, params
-    else
+    local pattern_segments = {}
+    for segment in string.gmatch(pattern, "[^/]+") do
+        table.insert(pattern_segments, segment)
+    end
+
+    local path_segments = {}
+    for segment in string.gmatch(path, "[^/]+") do
+        table.insert(path_segments, segment)
+    end
+
+    -- Quick check: pattern segments should be less or equal to path segments
+    if #pattern_segments ~= #path_segments then
         return false, nil
     end
+
+    local params = {}
+
+    for i = 1, #pattern_segments do
+        local p_seg = pattern_segments[i]
+        local path_seg = path_segments[i]
+
+        if p_seg:sub(1, 1) == ":" then
+            -- this is a parameter
+            local param_name = p_seg:sub(2)
+            params[param_name] = path_seg
+        else
+            -- fixed segment, must match exactly
+            if p_seg ~= path_seg then
+                return false, nil
+            end
+        end
+    end
+
+    return true, params
 end
 
 -- Function to find matching route and extract params

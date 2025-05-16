@@ -7,7 +7,7 @@
 
   <h1>LUXOR</h1>
 
-  <p>Luxor Project</p>
+  <p>A Lua Web Framework Designed for Simplicity and Ease of Use</p>
 </div>
 
 
@@ -33,7 +33,8 @@ local luxor = require("luxor")
 -- To verify that LuaSocket is installed correctly, open Lua and run:
 --    local luxor = require("luxor")
 --    print(luxor._INFO)
--- If you see output like "Luxor: A Simple Lua Web Framework\nV0.0.3-1", the installation was successful.
+-- If you see output like "Luxor: A Lua Web Framework Designed for 
+-- Simplicity and Ease of Use\nVersion: 0.4.0-1", the installation was successful.
 
 print(luxor._INFO)
 
@@ -97,11 +98,13 @@ luxor.add_route("GET", "/", function(request)
     return "200", "OK", {["Content-Type"] = "text/html; charset=utf-8"}, dynamic_html
 end)
 
+-- GET Method, Json
 luxor.add_route("GET", "/api/hello", function(request)
     local json_response = '{"message": "Hello, API!"}'
     return "200", "OK", {["Content-Type"] = "application/json"}, json_response
 end)
 
+-- Json
 local submit_handler = function(request)
     local json_response = request.body
 
@@ -110,17 +113,32 @@ local submit_handler = function(request)
     return "200", "OK", {["Content-Type"] = "application/json"}, json_response
 end
 
+-- POST Method, Json
 luxor.add_route("POST", "/submit", submit_handler)
 
--- Example handler with :id param
+-- Handler for route with parameter :id
 local function item_id_handler(request, params)
+    -- Retrieve the 'id' parameter from the route, default to "unknown" if not present
     local id = params.id or "unknown"
+    -- Prepare an HTML response displaying the item ID
     local response_body = "<h1>Item ID: " .. id .. "</h1>"
+    -- Return HTTP status, headers, and body
     return "200", "OK", {["Content-Type"] = "text/html"}, response_body
 end
 
--- Register route with parameter :id
+-- Register route for '/item/:id'
+-- This route matches URLs like '/item/45', with '45' captured as params.id
 luxor.add_route("GET", "/item/:id", item_id_handler)
+
+-- Register route for '/item/:id/post/:post_id'
+-- This route matches URLs like '/item/45/post/7'
+-- '45' will be captured as params.id, '7' as params.post_id
+luxor.add_route("GET", "/item/:id/post/:post_id", function(req, params)
+    -- Construct a plain text response including both parameters
+    local response_body = "Item ID: " .. params.id .. ", Post ID: " .. params.post_id
+    -- Return HTTP status, headers, and response body
+    return 200, "OK", {["Content-Type"] = "text/plain"}, response_body
+end)
 
 -- The Luxor framework provides an internal `http_client` method accessible via `luxor.http_client`.
 -- This function allows you to perform internal HTTP requests to your own application endpoints,
@@ -225,11 +243,21 @@ console.log("Hello from script.js!");
 
 ---
 
+## Contributing
+
+Contributions are welcome! If you'd like to contribute to Luxor, please fork the repository, create a new branch, and submit a pull request. For larger changes, please discuss your ideas via an issue before implementing them.
+
 ## License
 
-This project is licensed under either of the following licenses:
+Luxor is licensed under either of the following licenses:
 
 - MIT License
 - Apache License, Version 2.0
 
 You may choose either license for your purposes.
+
+---
+
+## Author
+
+[Dr. Montasir Mirghani](https://github.com/dr-montasir)
