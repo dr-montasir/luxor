@@ -1,5 +1,5 @@
 package = "luxor"
-version = "0.4.0-1"
+version = "0.5.0-1"
 source = {
    url = "git+https://github.com/dr-montasir/luxor.git"
 }

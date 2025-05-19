@@ -11,7 +11,7 @@
 --    local luxor = require("luxor")
 --    print(luxor._INFO)
 -- If you see output like "Luxor: A Lua Web Framework Designed for 
--- Simplicity and Ease of Use.\nVersion: 0.4.0-1", the installation was successful.
+-- Simplicity and Ease of Use.\nVersion: 0.5.0-1", the installation was successful.
 
 local luxor = require("lib.core") -- Load the core Luxor module
 
@@ -19,7 +19,7 @@ local luxor = require("lib.core") -- Load the core Luxor module
 -- LUXOR INFO FUNCTIONS
 ---------------------------------
 
-local version = "Version: 0.4.0-1"
+local version = "Version: 0.5.0-1"
 
 local dependencies = "  lua >= 5.1\n  luasocket >= 2.0"
 

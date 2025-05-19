@@ -34,7 +34,7 @@ local luxor = require("luxor")
 --    local luxor = require("luxor")
 --    print(luxor._INFO)
 -- If you see output like "Luxor: A Lua Web Framework Designed for 
--- Simplicity and Ease of Use\nVersion: 0.4.0-1", the installation was successful.
+-- Simplicity and Ease of Use\nVersion: 0.5.0-1", the installation was successful.
 
 print(luxor._INFO)
 

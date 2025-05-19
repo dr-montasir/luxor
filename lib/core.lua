@@ -262,7 +262,6 @@ local function parse_request(socket)
 end
 
 -- Function to serve static files from disk
--- This is more memory efficient than loading all into memory at startup
 local function serve_static_file(socket, requested_path)
     local file_path = luxor.config.static_root
 
@@ -273,15 +272,26 @@ local function serve_static_file(socket, requested_path)
     end
 
     -- Basic path sanitization to prevent directory traversal
-    -- This is NOT a complete security solution, but better than nothing.
     if requested_path:find("%.%.") or requested_path:find("~") or requested_path:find("\0") then
          send_response(socket, "403", "Forbidden", nil, "Invalid path.")
          return
     end
 
+    -- Handle path separator differences between Linux and Windows
+    local path_separator = "/"
+    if package.config:sub(1,1) == "\\" then
+        -- Running on Windows, use backslash
+        path_separator = "\\"
+    end
+
     -- Construct the full file path
-    -- Ensure we handle leading/trailing slashes correctly
-    local full_path = file_path .. "/" .. requested_path:gsub("^/", "") -- Remove leading slash from requested_path
+    -- Remove leading slash if present
+    local sanitized_path = requested_path:gsub("^/+", "")
+    -- Replace any forward slashes with the system's path separator
+    if path_separator == "\\" then
+        sanitized_path = sanitized_path:gsub("/", "\\")
+    end
+    local full_path = file_path .. path_separator .. sanitized_path
 
     -- Check if the file exists and is a regular file
     -- Use pcall for io.open as it can fail (e.g., permission errors)
@@ -294,6 +304,16 @@ local function serve_static_file(socket, requested_path)
         send_response(socket, "404", "Not Found", nil, "<h1>404 Not Found</h1>")
         return
     end
+
+    -- Get file size for Content-Length header
+    local size_ok, size = pcall(file_info.seek, file_info, "end") -- Seek to end
+    if not size_ok or not size then
+         print("Error getting file size for " .. full_path .. ": " .. tostring(size))
+         file_info:close()
+         send_response(socket, "500", "Internal Server Error", nil, "Error reading file size.")
+         return
+    end
+    file_info:seek("set", 0)         -- Seek back to beginning
 
     -- Function to determine Content-Type based on file extension
     local function content_type(full_path)
@@ -312,16 +332,6 @@ local function serve_static_file(socket, requested_path)
         -- Return default if no match found
         return default_type
     end
-
-    -- Get file size for Content-Length header
-    local size_ok, size = pcall(file_info.seek, file_info, "end") -- Seek to end
-    if not size_ok or not size then
-         print("Error getting file size for " .. full_path .. ": " .. tostring(size))
-         file_info:close()
-         send_response(socket, "500", "Internal Server Error", nil, "Error reading file size.")
-         return
-    end
-    file_info:seek("set", 0)         -- Seek back to beginning
 
     -- Build and send headers
     local headers = {
@@ -342,7 +352,7 @@ local function serve_static_file(socket, requested_path)
         return
     end
 
-    -- Send the file content in chunks (CORRECTED LOGIC)
+    -- Send the file content in chunks
     local chunk_size = 4096 -- Or adjust based on performance
     while true do
         local chunk_ok, chunk = pcall(file_info.read, file_info, chunk_size)
